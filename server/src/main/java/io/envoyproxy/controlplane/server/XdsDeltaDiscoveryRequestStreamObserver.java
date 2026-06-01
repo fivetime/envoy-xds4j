@@ -101,7 +101,13 @@ public class XdsDeltaDiscoveryRequestStreamObserver<V, X, Y> extends DeltaDiscov
       trackedResources.put(k, v);
       pendingResources.remove(k);
     });
-    removedResources.forEach(trackedResources::remove);
+    // A cache-driven removal is not an unsubscribe: the client is still subscribed to the resource, it just no
+    // longer exists. Keep it pending so that if it is (re)created later it is delivered to the subscriber.
+    // Explicit unsubscribes are handled separately in updateSubscriptions().
+    removedResources.forEach(r -> {
+      trackedResources.remove(r);
+      pendingResources.add(r);
+    });
   }
 
   @Override
